@@ -45,8 +45,7 @@ npm start
 The server will start and expose the following endpoints:
 
 - `http://localhost:3000/health` - Health check endpoint
-- `http://localhost:3000/sse` - SSE endpoint for MCP client connections
-- `http://localhost:3000/message` - Message endpoint for client requests
+- `http://localhost:3000/mcp` - SSE stream endpoint for MCP client connections
 
 ### Using with Gemini CLI
 
