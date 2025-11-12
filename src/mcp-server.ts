@@ -1,5 +1,8 @@
 #!/usr/bin/env node
 
+import fs from "fs";
+import https from "https";
+import http from "http";
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import Vault from "hashi-vault-js";
@@ -13,6 +16,16 @@ const VAULT_TOKEN = process.env.VAULT_TOKEN || "";
 const VAULT_TIMEOUT = process.env.VAULT_TIMEOUT ? parseInt(process.env.VAULT_TIMEOUT) : 5000;
 const VAULT_URL = process.env.VAULT_URL || `${VAULT_ADDR}/v1`;
 const VAULT_CACERT = process.env.VAULT_CACERT || undefined;
+const MCP_AUTH_TOKEN = process.env.MCP_AUTH_TOKEN; // Optional: Bearer token for MCP server authentication
+const MCP_TLS_KEY = process.env.MCP_TLS_KEY || './certs/mcp-server.key';
+const MCP_TLS_CERT = process.env.MCP_TLS_CERT || './certs/mcp-server.crt';
+const MCP_TLS_ENABLED = process.env.MCP_TLS_ENABLED === "true";
+
+const tlsOptions = {
+  key: fs.readFileSync(MCP_TLS_KEY),
+  cert: fs.readFileSync(MCP_TLS_CERT)
+  // No 'ca' needed for self-signed certificates
+};
 
 // Initialize Vault client
 const vaultClient = new Vault({
@@ -152,19 +165,62 @@ app.use(cors({
         origin: '*', // Configure appropriately for production, for example:
         // origin: ['https://your-remote-domain.com', 'https://your-other-remote-domain.com'],
         exposedHeaders: ['Mcp-Session-Id'],
-        allowedHeaders: ['Accept','Content-Type', 'mcp-session-id']
+        allowedHeaders: ['Accept','Content-Type', 'mcp-session-id', 'Authorization']
 }));
 app.use(express.json());
 
-// Health check endpoint
+// Authentication middleware
+const authenticate = (req: Request, res: Response, next: any) => {
+    // Skip authentication if MCP_AUTH_TOKEN is not set
+    if (!MCP_AUTH_TOKEN) {
+        console.log('[Auth] Authentication disabled (MCP_AUTH_TOKEN not set)');
+        return next();
+    }
+
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader) {
+        console.log('[Auth] Missing Authorization header');
+        return res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Missing Authorization header'
+        });
+    }
+
+    // Check for Bearer token format
+    const parts = authHeader.split(' ');
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+        console.log('[Auth] Invalid Authorization header format');
+        return res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Invalid Authorization header format. Expected: Bearer <token>'
+        });
+    }
+
+    const token = parts[1];
+    
+    // Validate token
+    if (token !== MCP_AUTH_TOKEN) {
+        console.log('[Auth] Invalid token');
+        return res.status(403).json({
+            error: 'Forbidden',
+            message: 'Invalid authentication token'
+        });
+    }
+
+    console.log('[Auth] Authentication successful');
+    next();
+};
+
+// Health check endpoint (unprotected)
 app.get("/health", (_req: Request, res: Response) => {
     res.json({ status: "ok", service: "hashi-vault-mcp" });
 });
 
-// MCP endpoint for server-to-client communication
+// MCP endpoint for server-to-client communication (protected)
 // Handle both GET (for SSE) and POST (for regular requests)
 // Gemini CLI also uses GET for initial handshake
-app.all('/mcp', async (req: Request, res: Response) => {
+app.all('/mcp', authenticate, async (req: Request, res: Response) => {
     try {
         console.log(`[MCP Server] ${req.method} request from ${req.ip}`);
         
@@ -198,11 +254,30 @@ app.all('/mcp', async (req: Request, res: Response) => {
     }
 });
 
-app.listen(MCP_PORT, () => {
-    console.log(`HashiCorp Vault MCP Server running on http://localhost:${MCP_PORT}`);
-    console.log(`MCP endpoint available at http://localhost:${MCP_PORT}/mcp`);
-}).on('error', error => {
+let webServer: http.Server | https.Server;
+
+if (MCP_TLS_ENABLED && MCP_TLS_CERT && MCP_TLS_KEY) {
+    // HTTPS mode
+    webServer = https.createServer(tlsOptions, app);
+    
+    webServer.listen(MCP_PORT, () => {
+        console.log(`[HTTPS] MCP server listening on https://localhost:${MCP_PORT}`);
+        console.log(`[HTTPS] Using certificate: ${MCP_TLS_CERT}`);
+    }).on('error', error => {
     console.error('Server error:', error);
     process.exit(1);
-});
-
+  })
+} else {
+    // HTTP mode (default)
+    webServer = http.createServer(app);
+    
+    webServer.listen(MCP_PORT, () => {
+        console.log(`[HTTP] MCP server listening on http://localhost:${MCP_PORT}`);
+        if (MCP_TLS_ENABLED) {
+        console.warn('[WARNING] TLS enabled but certificate paths not provided');
+        }
+    }).on('error', error => {
+        console.error('Server error:', error);
+        process.exit(1);
+    });
+}
