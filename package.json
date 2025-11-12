@@ -3,13 +3,13 @@
   "version": "0.1.0",
   "description": "MCP server for HashiCorp Vault operations",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/mcp-server.js",
   "bin": {
-    "hashi-vault-mcp": "dist/index.js"
+    "hashi-vault-mcp": "dist/mcp-server.js"
   },
   "scripts": {
     "build": "tsc",
-    "start": "source .env && node dist/index.js",
+    "start": "source .env && node dist/mcp-server.js",
     "watch": "tsc --watch",
     "prepare": "npm run build"
   },
