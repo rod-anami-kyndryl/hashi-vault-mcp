@@ -5,17 +5,20 @@ This guide explains how to configure Google's Gemini CLI to use the HashiCorp Va
 ## Prerequisites
 
 1. **Install Gemini CLI** (if not already installed)
+
    ```bash
    npm install -g @google/generative-ai-cli
    ```
 
 2. **Ensure your MCP server is running**
+
    ```bash
    npm run start
    # Server should be running on http://localhost:3000
    ```
 
 3. **Verify the endpoint is accessible**
+
    ```bash
    curl http://localhost:3000/health
    # Should return: {"status":"ok","service":"hashi-vault-mcp"}
@@ -27,7 +30,7 @@ This guide explains how to configure Google's Gemini CLI to use the HashiCorp Va
 
 The MCP server requires clients to send the following headers:
 
-```
+```bash
 Content-Type: application/json
 Accept: application/json, text/event-stream
 ```
@@ -122,21 +125,25 @@ GEMINI_API_KEY=your-api-key gemini-cli chat
 Once connected, the following tools are available to Gemini:
 
 1. **vault_read** - Read secrets from Vault
+
    ```
    Read the secret at path "secret/data/myapp/database"
    ```
 
 2. **vault_write** - Write secrets to Vault
+
    ```
    Write a secret to "secret/data/myapp/api" with api_key="abc123" and api_secret="xyz789"
    ```
 
 3. **vault_list** - List secrets at a path
+
    ```
    List all secrets under "secret/metadata/myapp"
    ```
 
 4. **vault_delete** - Delete secrets from Vault
+
    ```
    Delete the secret at "secret/data/myapp/old-config"
    ```

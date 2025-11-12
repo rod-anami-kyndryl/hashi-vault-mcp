@@ -9,6 +9,7 @@ curl http://localhost:3000/health
 ```
 
 Expected response:
+
 ```json
 {"status":"ok","service":"hashi-vault-mcp"}
 ```
@@ -51,6 +52,7 @@ curl -X POST http://localhost:3000/mcp \
 ```
 
 Expected response should include:
+
 - `vault_kv_read`
 - `vault_kv_create`
 - `vault_kv_list`
@@ -63,6 +65,7 @@ Expected response should include:
 **Cause**: Wrong HTTP method (using GET instead of POST)
 
 **Solution**: Use POST:
+
 ```bash
 curl -X POST http://localhost:3000/mcp ...
 ```
@@ -72,6 +75,7 @@ curl -X POST http://localhost:3000/mcp ...
 **Cause**: Missing or incorrect Accept header
 
 **Full error message**:
+
 ```json
 {
   "jsonrpc": "2.0",
@@ -84,6 +88,7 @@ curl -X POST http://localhost:3000/mcp ...
 ```
 
 **Solution**: Add the correct Accept header:
+
 ```bash
 -H "Accept: application/json, text/event-stream"
 ```
@@ -93,6 +98,7 @@ curl -X POST http://localhost:3000/mcp ...
 **Cause**: Server is not running
 
 **Solution**: Start the server:
+
 ```bash
 npm run start
 ```

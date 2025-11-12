@@ -1,6 +1,6 @@
 # HashiCorp Vault MCP Server
 
-A Model Context Protocol (MCP) server that provides tools for interacting with HashiCorp Vault via HTTP/SSE API.
+A Model Context Protocol (MCP) server that provides tools for interacting with HashiCorp Vault via Streamable HTTP API.
 
 ## Features
 
@@ -32,17 +32,14 @@ The server requires the following environment variables:
 
 - `VAULT_ADDR`: The address of your Vault server (default: `http://127.0.0.1:8200`)
 - `VAULT_TOKEN`: Your Vault authentication token
-- `PORT`: The port for the MCP server API (default: `3000`)
+- `MCP_PORT`: The port for the MCP server API (default: `3000`)
 
 ## Usage
 
 ### Running the Server
 
 ```bash
-export VAULT_ADDR="http://127.0.0.1:8200"
-export VAULT_TOKEN="your-vault-token"
-export PORT=3000
-node dist/index.js
+npm start
 ```
 
 The server will start and expose the following endpoints:
@@ -51,19 +48,24 @@ The server will start and expose the following endpoints:
 - `http://localhost:3000/sse` - SSE endpoint for MCP client connections
 - `http://localhost:3000/message` - Message endpoint for client requests
 
-### Using with Claude Desktop
+### Using with Gemini CLI
 
-Add this configuration to your Claude Desktop config file:
+Add this configuration to your Gemini config file:
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-
-**Windows**: `%APPDATA%/Claude/claude_desktop_config.json`
+**MacOS**: `~/.gemini/settings.json`
 
 ```json
 {
   "mcpServers": {
     "vault": {
-      "url": "http://localhost:3000/sse"
+      "httpUrl": "http://localhost:3000/mcp",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream"
+      },
+      "description": "Local MCP Server for HashiCorp Vault",
+      "trust": true,
+      "timeout": 10000
     }
   }
 }
@@ -73,14 +75,14 @@ Note: Make sure the server is running before starting Claude Desktop.
 
 ### Using with MCP Clients
 
-Connect to the SSE endpoint at `http://localhost:3000/sse` using any MCP-compatible client. The server uses Server-Sent Events (SSE) for real-time communication.
+Connect to the SSE endpoint at `http://localhost:3000/mcp` using any MCP-compatible client. The server uses Server-Sent Events (SSE) for real-time communication.
 
 ## Tool Examples
 
 ### Reading a Secret
 
 ```typescript
-// Tool: vault_read
+// Tool: vault_kv_read
 // Arguments:
 {
   "path": "secret/data/myapp/config"
@@ -90,7 +92,7 @@ Connect to the SSE endpoint at `http://localhost:3000/sse` using any MCP-compati
 ### Writing a Secret
 
 ```typescript
-// Tool: vault_write
+// Tool: vault_kv_create
 // Arguments:
 {
   "path": "secret/data/myapp/config",
@@ -106,7 +108,7 @@ Connect to the SSE endpoint at `http://localhost:3000/sse` using any MCP-compati
 ### Listing Secrets
 
 ```typescript
-// Tool: vault_list
+// Tool: vault_kv_list
 // Arguments:
 {
   "path": "secret/metadata/myapp"
@@ -116,7 +118,7 @@ Connect to the SSE endpoint at `http://localhost:3000/sse` using any MCP-compati
 ### Deleting a Secret
 
 ```typescript
-// Tool: vault_delete
+// Tool: vault_kv_delete
 // Arguments:
 {
   "path": "secret/data/myapp/config"
