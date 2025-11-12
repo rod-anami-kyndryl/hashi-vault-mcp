@@ -147,8 +147,11 @@ else
     echo "Response: $RESPONSE"
     exit 1
 fi
+```
 
-# Test 2: MCP Initialize (without Accept header - should fail)
+## MCP Initialize (without Accept header - should fail)
+
+```bash
 echo -e "\n${YELLOW}Test 2: MCP without Accept header (should fail with 406)${NC}"
 STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
@@ -159,8 +162,11 @@ if [ "$STATUS" = "406" ]; then
 else
     echo -e "${RED}✗ FAILED (expected 406, got $STATUS)${NC}"
 fi
+```
 
-# Test 3: MCP Initialize (with correct headers)
+## MCP Initialize (with correct headers)
+
+```bash
 echo -e "\n${YELLOW}Test 3: MCP with correct headers${NC}"
 RESPONSE=$(curl -s -X POST http://localhost:3000/mcp \
   -H "Content-Type: application/json" \
@@ -203,6 +209,7 @@ echo -e "\n${GREEN}All tests completed!${NC}"
 ```
 
 Save as `test-server.sh` and run:
+
 ```bash
 chmod +x test-server.sh
 ./test-server.sh
@@ -211,16 +218,19 @@ chmod +x test-server.sh
 ## Manual Testing Workflow
 
 1. **Start the server**:
+
    ```bash
    npm run start
    ```
 
 2. **In another terminal, test health**:
+
    ```bash
    curl http://localhost:3000/health
    ```
 
 3. **Test MCP connection**:
+
    ```bash
    curl -X POST http://localhost:3000/mcp \
      -H "Content-Type: application/json" \
@@ -251,7 +261,8 @@ app.post('/mcp', async (req, res) => {
 ### Check Server Logs
 
 The server outputs useful information:
-```
+
+```bash
 HashiCorp Vault MCP Server running on http://localhost:3000
 MCP endpoint available at http://localhost:3000/mcp
 ```

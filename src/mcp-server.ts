@@ -10,19 +10,22 @@ import { z } from 'zod';
 // Server configuration
 const VAULT_ADDR = process.env.VAULT_ADDR || "http://127.0.0.1:8200";
 const VAULT_TOKEN = process.env.VAULT_TOKEN || "";
+const VAULT_TIMEOUT = process.env.VAULT_TIMEOUT ? parseInt(process.env.VAULT_TIMEOUT) : 5000;
+const VAULT_URL = process.env.VAULT_URL || `${VAULT_ADDR}/v1`;
+const VAULT_CACERT = process.env.VAULT_CACERT || undefined;
 
 // Initialize Vault client
 const vaultClient = new Vault({
   https: VAULT_ADDR.startsWith("https"),
-  baseUrl: VAULT_ADDR,
-  rootPath: "",
-  timeout: 5000,
+  baseUrl: VAULT_URL,
+  timeout: VAULT_TIMEOUT,
   proxy: false,
+  cacert: VAULT_CACERT
 });
 
 // Create an MCP server
 const server = new McpServer({
-    name: 'vault',
+    name: 'vault-mcp-server',
     version: '0.1.0'
 });
 
@@ -33,14 +36,14 @@ server.registerTool(
     "vault_kv_read",
     {
         title: 'Read a KV secret',
-        description: 'Read a KV secret from HashiCorp Vault at the specified path',
+        description: 'Read a KV secret from HashiCorp Vault at the specified name and path',
         inputSchema: {
-            path: z.string().describe('The path to the secret in Vault (e.g., "secret/data/myapp/config")')
-        },
-        outputSchema: { secret: z.record(z.any()) }
+            path: z.string().describe("The path to the secret in Vault (e.g., myapp)"),
+            name: z.string().describe("The name of the secret to read in Vault (e.g., config)")
+        }
     },
-    async ({ path }) => {
-        const result = await vaultClient.readKVSecret(VAULT_TOKEN, path);
+    async ({ name, path }) => {
+        const result = await vaultClient.readKVSecret(VAULT_TOKEN, name, 0, path);
         return {
             content: [
                 {
@@ -58,10 +61,9 @@ server.registerTool(
         title: "Create a KV secret",
         description: "Create a KV secret in HashiCorp Vault at the specified path",
         inputSchema: {
-            path: z.string().describe("The path to the secret in Vault (e.g., \"secret/data/myapp/config\")"),
-            data: z.record(z.any()).describe("The secret data to write as a JSON object"),
-        },
-        outputSchema: { secret: z.record(z.any()) }
+            path: z.string().describe("The path to the secret in Vault (e.g., myapp/config)"),
+            data: z.record(z.any()).describe("The secret data to write as a JSON object")
+        }
     },
     async ({ path, data }) => {
         const result = await vaultClient.createKVSecret(VAULT_TOKEN, path, data);
@@ -82,9 +84,8 @@ server.registerTool(
         title: "List KV secrets",
         description: "List KV secrets in HashiCorp Vault at the specified path",
         inputSchema: {
-            path: z.string().describe("The path to the secret in Vault (e.g., \"secret/data/myapp/config\")"),
-        },
-        outputSchema: { secret: z.record(z.any()) }
+            path: z.string().describe("The path to the secret in Vault (e.g., \"secret/data/myapp/config\")")
+        }
     },
     async ({ path }) => {
         const result = await vaultClient.listKVSecrets(VAULT_TOKEN, path);
@@ -105,9 +106,8 @@ server.registerTool(
         title: "Delete a KV secret",
         description: "Delete the latest KV secret from HashiCorp Vault at the specified path",
         inputSchema: {
-            path: z.string().describe("The path to the secret in Vault (e.g., \"secret/data/myapp/config\")"),
-        },
-        outputSchema: { secret: z.record(z.any()) }
+            path: z.string().describe("The path to the secret in Vault (e.g., \"secret/data/myapp/config\")")
+        }
     },
     async ({ path }) => {
         const result = await vaultClient.deleteLatestVerKVSecret(VAULT_TOKEN, path);
