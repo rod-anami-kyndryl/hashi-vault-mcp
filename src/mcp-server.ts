@@ -36,14 +36,15 @@ server.registerTool(
     "vault_kv_read",
     {
         title: 'Read a KV secret',
-        description: 'Read a KV secret from HashiCorp Vault at the specified name and path',
+        description: 'Read a KV secret from HashiCorp Vault at the specified path and mount point',
         inputSchema: {
-            path: z.string().describe("The path to the secret in Vault (e.g., myapp)"),
-            name: z.string().describe("The name of the secret to read in Vault (e.g., config)")
+            path: z.string().describe("The path of the secret to read in Vault (e.g., myapp/config)"),
+            mount: z.string().optional().describe("The mount point in Vault (e.g. secret)"),
+            version: z.number().optional().describe("The version of the secret to read (for KV v2)"),
         }
     },
-    async ({ name, path }) => {
-        const result = await vaultClient.readKVSecret(VAULT_TOKEN, name, 0, path);
+    async ({ path, version, mount }) => {
+        const result = await vaultClient.readKVSecret(VAULT_TOKEN, path, version, mount);
         return {
             content: [
                 {
@@ -61,12 +62,13 @@ server.registerTool(
         title: "Create a KV secret",
         description: "Create a KV secret in HashiCorp Vault at the specified path",
         inputSchema: {
-            path: z.string().describe("The path to the secret in Vault (e.g., myapp/config)"),
-            data: z.record(z.any()).describe("The secret data to write as a JSON object")
+            path: z.string().describe("The path to the secret in Vault (e.g. myapp/config)"),
+            data: z.record(z.any()).describe("The secret data to write as a JSON object"),
+            mount: z.string().optional().describe("The mount point in Vault (e.g. secret)")
         }
     },
-    async ({ path, data }) => {
-        const result = await vaultClient.createKVSecret(VAULT_TOKEN, path, data);
+    async ({ path, data , mount }) => {
+        const result = await vaultClient.createKVSecret(VAULT_TOKEN, path, data, mount);
         return {
             content: [
                 {
@@ -84,11 +86,12 @@ server.registerTool(
         title: "List KV secrets",
         description: "List KV secrets in HashiCorp Vault at the specified path",
         inputSchema: {
-            path: z.string().describe("The path to the secret in Vault (e.g., \"secret/data/myapp/config\")")
+            mount: z.string().optional().describe("The mount point in Vault (e.g. secret)"),
+            folder: z.string().optional().describe("The path to the secret in Vault (e.g. myapp)")
         }
     },
-    async ({ path }) => {
-        const result = await vaultClient.listKVSecrets(VAULT_TOKEN, path);
+    async ({ folder, mount }) => {
+        const result = await vaultClient.listKVSecrets(VAULT_TOKEN, folder, mount);
         return {
             content: [
                 {

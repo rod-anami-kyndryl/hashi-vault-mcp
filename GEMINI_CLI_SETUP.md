@@ -75,16 +75,14 @@ gemini-cli chat --mcp-server vault=http://localhost:3000/mcp
 
 Here's a complete configuration with multiple settings:
 
-**File**: `~/.config/gemini-cli/config.json`
+**File**: `~/.gemini/settings.json`
 
 ```json
 {
-  "apiKey": "your-gemini-api-key",
-  "model": "gemini-pro",
+  ...
   "mcpServers": {
     "vault": {
-      "url": "http://localhost:3000/mcp",
-      "transport": "http",
+      "httpUrl": "http://localhost:3000/mcp",
       "headers": {
         "Content-Type": "application/json",
         "Accept": "application/json, text/event-stream"
@@ -100,12 +98,12 @@ Here's a complete configuration with multiple settings:
 
 ```bash
 # Start interactive chat
-gemini-cli chat
+gemini
 
 # Once in the chat, you can use Vault tools:
-> Can you read the secret at path "secret/data/myapp/config"?
-> List all secrets under "secret/metadata/myapp"
-> Write a secret to "secret/data/myapp/test" with key "value"
+> Can you read the KV secret at path "myapp" with name "config"?
+> List all KV secrets under "myapp" path
+> Write a secret to "myapp" path, with name "database" and key "value"
 ```
 
 ### With Specific Model
@@ -124,29 +122,29 @@ GEMINI_API_KEY=your-api-key gemini-cli chat
 
 Once connected, the following tools are available to Gemini:
 
-1. **vault_read** - Read secrets from Vault
+1. **vault_kv_read** - Read KV secrets from Vault
 
-   ```
-   Read the secret at path "secret/data/myapp/database"
-   ```
+```text
+Read the secret at path "myapp" with name "database"
+```
 
-2. **vault_write** - Write secrets to Vault
+1. **vault_write** - Write KV secrets to Vault
 
-   ```
-   Write a secret to "secret/data/myapp/api" with api_key="abc123" and api_secret="xyz789"
-   ```
+```text
+Write a secret to "myapp" path with api_key="abc123" and api_secret="xyz789"
+```
 
-3. **vault_list** - List secrets at a path
+1. **vault_list** - List KV secrets at a path
 
-   ```
-   List all secrets under "secret/metadata/myapp"
-   ```
+```text
+List all KV secrets under path "myapp"
+```
 
-4. **vault_delete** - Delete secrets from Vault
+1. **vault_delete** - Delete secrets from Vault
 
-   ```
-   Delete the secret at "secret/data/myapp/old-config"
-   ```
+```text
+Delete the secret at "myapp" path with name "slack"
+```
 
 ## Troubleshooting
 
@@ -155,6 +153,7 @@ Once connected, the following tools are available to Gemini:
 **Problem**: "Failed to connect to MCP server"
 
 **Solutions**:
+
 1. Verify server is running:
    ```bash
    curl http://localhost:3000/health
