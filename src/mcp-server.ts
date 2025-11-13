@@ -19,12 +19,13 @@ const VAULT_CACERT = process.env.VAULT_CACERT || undefined;
 const MCP_AUTH_TOKEN = process.env.MCP_AUTH_TOKEN; // Optional: Bearer token for MCP server authentication
 const MCP_TLS_KEY = process.env.MCP_TLS_KEY || './certs/mcp-server.key';
 const MCP_TLS_CERT = process.env.MCP_TLS_CERT || './certs/mcp-server.crt';
+const MCP_TLS_CA = process.env.MCP_TLS_CA || './certs/ca.crt';
 const MCP_TLS_ENABLED = process.env.MCP_TLS_ENABLED === "true";
 
 const tlsOptions = {
   key: fs.readFileSync(MCP_TLS_KEY),
-  cert: fs.readFileSync(MCP_TLS_CERT)
-  // No 'ca' needed for self-signed certificates
+  cert: fs.readFileSync(MCP_TLS_CERT),
+  cacert: fs.readFileSync(MCP_TLS_CA)
 };
 
 // Initialize Vault client
